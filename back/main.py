@@ -23,3 +23,6 @@ app.include_router(funcionario_router)
 from equipe_routes import equipe_router
 app.include_router(equipe_router)
 
+from estatistica_routes import estatistica_router
+app.include_router(estatistica_router)
+

@@ -4,7 +4,7 @@ from sqlalchemy import func, extract, select
 from datetime import datetime
 
 from dependencies import pegar_sessao
-from models import Equipe_Atividade
+from models import Equipe_Atividade, Epi, Atividade, HistoricoConformidade, Atividade_Epi
 
 estatistica_router = APIRouter(prefix="/estatisticas", tags=["Estatísticas"])
 
@@ -25,3 +25,74 @@ async def contar_equipes_mes_atual(sessao: Session = Depends(pegar_sessao)):
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Erro ao buscar estatística: {e}")
+
+@estatistica_router.get("/conformes")
+async def listar_epis_conformes(sessao: Session = Depends(pegar_sessao)):
+    try:
+        
+        subq = (
+            sessao.query(
+                HistoricoConformidade.equipe_id,
+                func.max(HistoricoConformidade.data_validacao).label("ultima_data")
+            )
+            .group_by(HistoricoConformidade.equipe_id)
+            .subquery()
+        )
+
+        ultimos = (
+            sessao.query(HistoricoConformidade)
+            .join(subq, (HistoricoConformidade.equipe_id == subq.c.equipe_id) &
+                        (HistoricoConformidade.data_validacao == subq.c.ultima_data))
+            .filter(HistoricoConformidade.em_conformidade == True)
+            .subquery()
+        )
+
+        query = (
+            sessao.query(Epi)
+            .join(Atividade_Epi, Epi.id == Atividade_Epi.c.Epi_idEpi)
+            .join(Atividade, Atividade.id == Atividade_Epi.c.Atividade_idAtividade)
+            .join(Equipe_Atividade, Equipe_Atividade.c.Atividade_idAtividade == Atividade.id)
+            .join(ultimos, ultimos.c.equipe_id == Equipe_Atividade.c.Equipe_idEquipe)
+            .distinct()
+        )
+
+        epis = query.all()
+        return {"total": len(epis), "epis_conformes": [epi.nome for epi in epis]}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao buscar EPIs conformes: {e}")
+
+@estatistica_router.get("/nao-conformes")
+async def listar_epis_nao_conformes(sessao: Session = Depends(pegar_sessao)):
+    try:
+        subq = (
+            sessao.query(
+                HistoricoConformidade.equipe_id,
+                func.max(HistoricoConformidade.data_validacao).label("ultima_data")
+            )
+            .group_by(HistoricoConformidade.equipe_id)
+            .subquery()
+        )
+
+        ultimos = (
+            sessao.query(HistoricoConformidade)
+            .join(subq, (HistoricoConformidade.equipe_id == subq.c.equipe_id) &
+                        (HistoricoConformidade.data_validacao == subq.c.ultima_data))
+            .filter(HistoricoConformidade.em_conformidade == False)
+            .subquery()
+        )
+
+        query = (
+            sessao.query(Epi)
+            .join(Atividade_Epi, Epi.id == Atividade_Epi.c.Epi_idEpi)
+            .join(Atividade, Atividade.id == Atividade_Epi.c.Atividade_idAtividade)
+            .join(Equipe_Atividade, Equipe_Atividade.c.Atividade_idAtividade == Atividade.id)
+            .join(ultimos, ultimos.c.equipe_id == Equipe_Atividade.c.Equipe_idEquipe)
+            .distinct()
+        )
+
+        epis = query.all()
+        return {"total": len(epis), "epis_nao_conformes": [epi.nome for epi in epis]}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Erro ao buscar EPIs não conformes: {e}")

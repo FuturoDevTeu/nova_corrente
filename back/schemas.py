@@ -13,11 +13,6 @@ class FuncionarioSchemas(BaseModel):
     class Config:
         from_attributes = True
 
-class EquipeSchemas(BaseModel):
-    nome_funcionarios: List[str]
-    atividades: List[str]
 
-    class Config:
-        from_attributes = True
 
 

@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 6
+names: ['Boots', 'Ear Muffs', 'Gloves', 'Hard Hat', 'Reflective Vest', 'Safety Glasses']
+
+roboflow:
+  workspace: billys-workspace
+  project: ppe-identifier
+  version: 5
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/billys-workspace/ppe-identifier/dataset/5

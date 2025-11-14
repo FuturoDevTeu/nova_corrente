@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from passlib.context import CryptContext
+from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 import os
@@ -9,6 +10,17 @@ app = FastAPI()
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],  # Permite todos os métodos
+    allow_headers=["*"],  # Permite todos os headers
+)
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -27,4 +39,7 @@ app.include_router(estatistica_router)
 
 from ia_routes import ia_router
 app.include_router(ia_router)
+
+from atividade_routes import atividade_router
+app.include_router(atividade_router)
 
